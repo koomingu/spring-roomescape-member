@@ -1,6 +1,9 @@
 package roomescape.reservation.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,14 +20,19 @@ import roomescape.reservation.service.ReservationService;
 @RequestMapping("/reservations")
 public class UserReservationController {
     private final ReservationService reservationService;
+    private final HttpMessageConverters messageConverters;
 
-    public UserReservationController(ReservationService reservationService) {
+    public UserReservationController(ReservationService reservationService, HttpMessageConverters messageConverters) {
         this.reservationService = reservationService;
+        this.messageConverters = messageConverters;
     }
 
     @GetMapping
     public ResponseEntity<List<ReservationResponse>> getReservations(
-            @RequestParam(required = true) String name
+            @RequestParam(required = true)
+            @NotBlank(message = "조회할 예약자 이름은 필수입니다.")
+            @Pattern(regexp = "^[^<>]*$", message = "올바르지 않은 이름 형식입니다.")
+            String name
     ) {
         List<Reservation> reservations = reservationService.findAllByName(name);
 

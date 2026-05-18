@@ -2,6 +2,7 @@ package roomescape.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -9,11 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -32,6 +35,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity
                 .status(e.getStatus())
                 .body(response);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException e,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request
+    ) {
+        String errorMessage = e.getParameterValidationResults()
+                .stream()
+                .findFirst()
+                .map(ParameterValidationResult::getResolvableErrors)
+                .flatMap(errors -> errors.stream().findFirst())
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .orElse("유효하지 않은 요청입니다");
+
+        return createErrorResponseEntity(e, headers, status, request, errorMessage);
     }
 
     @Override
