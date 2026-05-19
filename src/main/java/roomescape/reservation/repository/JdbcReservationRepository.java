@@ -54,4 +54,9 @@ public class JdbcReservationRepository implements ReservationRepository {
     public void updateDateTime(Long id, String name, LocalDate date, long timeId) {
         reservationDao.updateDateTime(id, name, date, timeId);
     }
+
+    @Override
+    public boolean existsByThemeId(Long themeId) {
+        return reservationDao.existsByThemeId(themeId);
+    }
 }
