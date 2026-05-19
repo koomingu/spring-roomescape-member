@@ -15,7 +15,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import roomescape.exception.NotFoundException;
 import roomescape.exception.UnauthorizedActionException;
 import roomescape.reservation.domain.Reservation;
-import roomescape.reservation.dto.ReservationDeleteRequest;
 import roomescape.reservation.dto.ReservationRequest;
 import roomescape.reservation.dto.ReservationUpdateRequest;
 import roomescape.reservation.service.ReservationService;
@@ -69,13 +68,15 @@ class UserReservationControllerTest {
 
     @Test
     void 예약을_생성할_수_있다() throws Exception {
+        LocalDate futureDate = LocalDate.now().plusDays(1);
+
         ReservationTime time = new ReservationTime(1L, LocalTime.of(10, 0));
         Theme theme = new Theme(2L, "Theme A", "desc", "https://example.com/a.png");
-        Reservation reservation = new Reservation(3L, "브라운", LocalDate.of(2026, 5, 1), time, theme);
+        Reservation reservation = new Reservation(3L, "브라운", futureDate, time, theme);
 
-        ReservationRequest request = new ReservationRequest("브라운", LocalDate.of(2026, 5, 1), 1L, 2L);
+        ReservationRequest request = new ReservationRequest("브라운", futureDate, 1L, 2L);
 
-        when(reservationService.save(eq("브라운"), eq(LocalDate.of(2026, 5, 1)), eq(1L), eq(2L)))
+        when(reservationService.save(eq("브라운"), eq(futureDate), eq(1L), eq(2L)))
                 .thenReturn(reservation);
 
         mockMvc.perform(post("/reservations")
@@ -84,7 +85,7 @@ class UserReservationControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(3))
                 .andExpect(jsonPath("$.name").value("브라운"))
-                .andExpect(jsonPath("$.date").value("2026-05-01"))
+                .andExpect(jsonPath("$.date").value(futureDate.toString()))
                 .andExpect(jsonPath("$.time.id").value(1))
                 .andExpect(jsonPath("$.time.startAt").value("10:00:00"))
                 .andExpect(jsonPath("$.theme.id").value(2))
@@ -93,11 +94,10 @@ class UserReservationControllerTest {
 
     @Test
     void 예약을_삭제할_수_있다() throws Exception {
-        ReservationDeleteRequest request = new ReservationDeleteRequest("브라운");
+        String name = "브라운";
 
         mockMvc.perform(delete("/reservations/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .param("name", name))
                 .andExpect(status().isNoContent());
     }
 
