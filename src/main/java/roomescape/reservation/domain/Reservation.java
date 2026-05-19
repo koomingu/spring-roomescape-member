@@ -20,6 +20,8 @@ public class Reservation {
     }
 
     public Reservation(Long id, String name, LocalDate date, ReservationTime time, Theme theme) {
+        validateNotNull(name, date, time, theme);
+        validateNameNotBlank(name);
         validateReservationDateTime(date, time.startAt());
 
         this.id = id;
@@ -30,6 +32,9 @@ public class Reservation {
     }
 
     public void validateUpdateDateTime(LocalDate newDate, LocalTime newTime) {
+        if (newDate == null || newTime == null) {
+            throw new BadRequestException("변경할 날짜와 시간 정보가 필요합니다.");
+        }
         validateReservationDateTime(newDate, newTime);
     }
 
@@ -45,6 +50,18 @@ public class Reservation {
 
         if (date.isBefore(today) || (date.equals(today) && time.startAt().isBefore(now))) {
             throw new BadRequestException("지난 예약은 삭제할 수 없습니다.");
+        }
+    }
+
+    private void validateNotNull(String name, LocalDate date, ReservationTime time, Theme theme) {
+        if (name == null || date == null || time == null || theme == null) {
+            throw new BadRequestException("예약의 필수 정보(이름, 날짜, 시간, 테마)는 누락될 수 없습니다.");
+        }
+    }
+
+    private void validateNameNotBlank(String name) {
+        if (name.isBlank()) {
+            throw new BadRequestException("예약자 이름은 비어있거나 공백일 수 없습니다.");
         }
     }
 
