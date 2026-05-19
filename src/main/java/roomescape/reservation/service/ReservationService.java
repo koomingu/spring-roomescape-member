@@ -1,5 +1,6 @@
 package roomescape.reservation.service;
 
+import java.util.Optional;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,8 +80,12 @@ public class ReservationService {
 
     @Transactional
     public void deleteByUser(long id, String userName) {
-        Reservation reservation = findById(id);
+        Optional<Reservation> optionalReservation = reservationRepository.findById(id);
+        if (optionalReservation.isEmpty()) {
+            return;
+        }
 
+        Reservation reservation = optionalReservation.get();
         reservation.validateOwner(userName);
         reservation.validateDeletable();
         reservationRepository.delete(reservation.getId());
