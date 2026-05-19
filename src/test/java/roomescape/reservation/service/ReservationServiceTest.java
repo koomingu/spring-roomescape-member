@@ -11,7 +11,7 @@ import org.springframework.dao.DuplicateKeyException;
 import roomescape.exception.BadRequestException;
 import roomescape.exception.DuplicateException;
 import roomescape.exception.NotFoundException;
-import roomescape.exception.UnauthorizedActionException;
+import roomescape.exception.ForbiddenActionException;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.repository.ReservationRepository;
 import roomescape.reservationtime.domain.ReservationTime;
@@ -154,7 +154,7 @@ class ReservationServiceTest {
 
         // when & then
         assertThatThrownBy(() -> reservationService.deleteByUser(1L, intruderName))
-                .isInstanceOf(UnauthorizedActionException.class)
+                .isInstanceOf(ForbiddenActionException.class)
                 .hasMessageContaining("예약자 이름이 일치하지 않아");
     }
 

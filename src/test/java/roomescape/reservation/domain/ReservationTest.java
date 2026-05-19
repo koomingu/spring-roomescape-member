@@ -12,7 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import roomescape.exception.BadRequestException;
-import roomescape.exception.UnauthorizedActionException;
+import roomescape.exception.ForbiddenActionException;
 import roomescape.reservationtime.domain.ReservationTime;
 import roomescape.theme.domain.Theme;
 
@@ -121,7 +121,7 @@ class ReservationTest {
 
             // when & then
             assertThatThrownBy(() -> reservation.validateOwner(mismatchName))
-                    .isInstanceOf(UnauthorizedActionException.class)
+                    .isInstanceOf(ForbiddenActionException.class)
                     .hasMessage("예약자 이름이 일치하지 않습니다.");
         }
     }

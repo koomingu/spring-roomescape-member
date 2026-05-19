@@ -13,7 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import roomescape.exception.NotFoundException;
-import roomescape.exception.UnauthorizedActionException;
+import roomescape.exception.ForbiddenActionException;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.dto.ReservationRequest;
 import roomescape.reservation.dto.ReservationUpdateRequest;
@@ -136,7 +136,7 @@ class UserReservationControllerTest {
         ReservationUpdateRequest request = new ReservationUpdateRequest("틀린이름", LocalDate.now().plusDays(3), 2L);
 
         given(reservationService.updateReservationDateTimeByUser(anyLong(), anyString(), any(LocalDate.class), anyLong()))
-                .willThrow(new UnauthorizedActionException("예약자이름이 일치하지 않아 수정할 수 없습니다."));
+                .willThrow(new ForbiddenActionException("예약자이름이 일치하지 않아 수정할 수 없습니다."));
 
         // when & then
         mockMvc.perform(patch("/reservations/{id}", reservationId)

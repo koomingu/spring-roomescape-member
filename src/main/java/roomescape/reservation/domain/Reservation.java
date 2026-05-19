@@ -2,7 +2,7 @@ package roomescape.reservation.domain;
 
 import java.time.LocalTime;
 import roomescape.exception.BadRequestException;
-import roomescape.exception.UnauthorizedActionException;
+import roomescape.exception.ForbiddenActionException;
 import roomescape.reservationtime.domain.ReservationTime;
 import roomescape.theme.domain.Theme;
 
@@ -35,7 +35,7 @@ public class Reservation {
 
     public void validateOwner(String userName) {
         if (!this.name.equals(userName)) {
-            throw new UnauthorizedActionException("예약자 이름이 일치하지 않습니다.");
+            throw new ForbiddenActionException("예약자 이름이 일치하지 않습니다.");
         }
     }
 
