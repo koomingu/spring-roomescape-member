@@ -6,11 +6,11 @@ import jakarta.validation.constraints.Pattern;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import roomescape.reservation.domain.Reservation;
-import roomescape.reservation.dto.ReservationDeleteRequest;
 import roomescape.reservation.dto.ReservationRequest;
 import roomescape.reservation.dto.ReservationResponse;
 import roomescape.reservation.dto.ReservationUpdateRequest;
@@ -18,6 +18,7 @@ import roomescape.reservation.service.ReservationService;
 
 @RestController
 @RequestMapping("/reservations")
+@Validated
 public class UserReservationController {
     private final ReservationService reservationService;
     private final HttpMessageConverters messageConverters;
@@ -60,8 +61,11 @@ public class UserReservationController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReservation(
             @PathVariable long id,
-            @Valid @RequestBody ReservationDeleteRequest reservationDeleteRequest) {
-        reservationService.deleteByUser(id, reservationDeleteRequest.name());
+            @RequestParam(required = true)
+            @NotBlank(message = "이름은 비어있을 수 없습니다.")
+            String name
+    ) {
+        reservationService.deleteByUser(id, name);
         return ResponseEntity.noContent().build();
     }
 
