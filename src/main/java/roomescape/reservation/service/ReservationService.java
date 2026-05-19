@@ -1,13 +1,10 @@
 package roomescape.reservation.service;
 
-import java.time.LocalTime;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import roomescape.exception.BadRequestException;
 import roomescape.exception.DuplicateException;
 import roomescape.exception.NotFoundException;
-import roomescape.exception.UnauthorizedActionException;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.repository.ReservationRepository;
 import roomescape.reservationtime.domain.ReservationTime;
@@ -42,6 +39,10 @@ public class ReservationService {
                 .orElseThrow(() -> new NotFoundException("해당 예약을 찾을 수 없습니다. id: " + id));
     }
 
+    public List<Reservation> findAllByName(String name) {
+        return reservationRepository.findAllByName(name);
+    }
+
     @Transactional
     public Reservation save(String name, LocalDate date, long timeId, long themeId) {
         ReservationTime time = reservationTimeRepository.findById(timeId)
@@ -50,7 +51,6 @@ public class ReservationService {
         Theme theme = themeRepository.findById(themeId)
                 .orElseThrow(() -> new NotFoundException("해당 테마를 찾을 수 없습니다."));
 
-        validateReservationDateTime(date, time.startAt());
         validateDuplicateReservation(date, timeId, themeId);
 
         try {
@@ -60,23 +60,30 @@ public class ReservationService {
         }
     }
 
-    private void validateReservationDateTime(LocalDate date, LocalTime time) {
-        LocalDate today = LocalDate.now();
+    @Transactional
+    public Reservation updateReservationDateTimeByUser(long id, String name, LocalDate date, long timeId) {
+        Reservation reservation = findById(id);
 
-        if (date.isBefore(today)) {
-            throw new BadRequestException("예약 날짜는 오늘 이후여야 합니다.");
-        }
-        if (date.equals(today) && time.isBefore(LocalTime.now())) {
-            throw new BadRequestException("예약 시간은 현재 시간 이후여야 합니다.");
-        }
+        reservation.validateOwner(name);
+
+        ReservationTime time = reservationTimeRepository.findById(timeId)
+                .orElseThrow(() -> new NotFoundException("예약 시간을 찾을 수 없습니다."));
+
+        reservation.validateUpdateDateTime(date, time.startAt());
+
+        validateDuplicateReservation(date, timeId, reservation.getTheme().id());
+
+        reservationRepository.updateDateTime(reservation.getId(), name, date, timeId);
+        return findById(id);
     }
 
-    private void validateDuplicateReservation(LocalDate date, long timeId, long themeId) {
-        boolean isDuplicate = reservationRepository.existsByDateTimeAndTheme(date, timeId, themeId);
+    @Transactional
+    public void deleteByUser(long id, String userName) {
+        Reservation reservation = findById(id);
 
-        if (isDuplicate) {
-            throw new DuplicateException("해당 날짜와 시간, 테마는 이미 예약이 완료되었습니다.");
-        }
+        reservation.validateOwner(userName);
+        reservation.validateDeletable();
+        reservationRepository.delete(reservation.getId());
     }
 
     @Transactional
@@ -85,47 +92,11 @@ public class ReservationService {
         reservationRepository.delete(reservation.getId());
     }
 
-    @Transactional
-    public void deleteByUser(long id, String userName) {
-        Reservation reservation = findById(id);
+    private void validateDuplicateReservation(LocalDate date, long timeId, long themeId) {
+        boolean isDuplicate = reservationRepository.existsByDateTimeAndTheme(date, timeId, themeId);
 
-        if (!reservation.getName().equals(userName)) {
-            throw new UnauthorizedActionException("예약자 이름이 일치하지 않아 삭제할 수 없습니다.");
+        if (isDuplicate) {
+            throw new DuplicateException("해당 날짜와 시간, 테마는 이미 예약이 완료되었습니다.");
         }
-
-        validateNotPastReservationForDeletion(reservation.getDate(), reservation.getTime().startAt());
-
-        reservationRepository.delete(reservation.getId());
-    }
-
-    private void validateNotPastReservationForDeletion(LocalDate date, LocalTime time) {
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
-
-        if (date.isBefore(today) || (date.equals(today) && time.isBefore(now))) {
-            throw new BadRequestException("지난 예약은 삭제할 수 없습니다.");
-        }
-    }
-
-    public List<Reservation> findAllByName(String name) {
-        return reservationRepository.findAllByName(name);
-    }
-
-    @Transactional
-    public Reservation updateReservationDateTimeByUser(long id, String name, LocalDate date, long timeId) {
-        Reservation reservation = findById(id);
-
-        if (!reservation.getName().equals(name)) {
-            throw new UnauthorizedActionException("예약자 이름이 일치하지 않아 수정할 수 없습니다.");
-        }
-
-        ReservationTime time = reservationTimeRepository.findById(timeId)
-                .orElseThrow(() -> new NotFoundException("예약 시간을 찾을 수 없습니다."));
-
-        validateReservationDateTime(date, time.startAt());
-        validateDuplicateReservation(date, timeId, reservation.getTheme().id());
-
-        reservationRepository.updateDateTime(reservation.getId(), name, date, timeId);
-        return findById(id);
     }
 }
